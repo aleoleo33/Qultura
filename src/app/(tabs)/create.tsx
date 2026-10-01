@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrutalCard } from '@/components/BrutalCard';
 import { colors } from '@/theme/colors';
 import { globalStyles, shadows, radii } from '@/theme/typography';
-import { Image as ImageIcon, Film, FileText, X, Check } from 'lucide-react-native';
+import { Image as ImageIcon, Film, FileText, X, Check, UploadCloud } from 'lucide-react-native';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const POST_TYPES = [
   { id: 'artwork', icon: ImageIcon, label: 'Artwork' },
@@ -27,6 +28,7 @@ export default function CreateScreen() {
   const [postType, setPostType] = useState('artwork');
   const [caption, setCaption] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { isWide } = useResponsive();
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev =>
@@ -35,14 +37,26 @@ export default function CreateScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={globalStyles.heading2}>New Post</Text>
-          <TouchableOpacity style={styles.publishBtn} activeOpacity={0.8}>
-            <Text style={[globalStyles.stamp, { color: '#fff' }]}>Publish</Text>
-          </TouchableOpacity>
-        </View>
+    <SafeAreaView style={styles.container} edges={isWide ? [] : ['top', 'left', 'right']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={isWide && { paddingBottom: 48 }}>
+        <View style={[styles.contentWrapper, isWide && styles.contentWrapperDesktop]}>
+          <View style={styles.header}>
+            <View>
+              <Text style={isWide ? globalStyles.heading1 : globalStyles.heading2}>
+                {isWide ? 'Studio: New Post' : 'New Post'}
+              </Text>
+              {isWide && (
+                <Text style={[globalStyles.body, { color: colors.text.tertiary, marginTop: 4 }]}>
+                  Share your original artwork, ceramics, or process with the community.
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity style={styles.publishBtn} activeOpacity={0.8}>
+              <Text style={[globalStyles.stamp, { color: '#fff' }]}>
+                {isWide ? 'Publish to Qultura' : 'Publish'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
         {/* Post type selector — soft segmented control */}
         <View style={styles.typePicker}>
@@ -161,6 +175,7 @@ export default function CreateScreen() {
         </View>
 
         <View style={{ height: 40 }} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -168,6 +183,13 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background.primary },
+  contentWrapper: { width: '100%' },
+  contentWrapperDesktop: {
+    maxWidth: 780,
+    width: '100%',
+    marginHorizontal: 'auto',
+    paddingTop: 24,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

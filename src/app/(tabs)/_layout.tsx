@@ -5,25 +5,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, ShoppingBag, PlusSquare, Users, User } from 'lucide-react-native';
 import { colors } from '@/theme/colors';
 import { shadows, radii } from '@/theme/typography';
+import { useResponsive } from '@/hooks/useResponsive';
+import { DesktopNavbar } from '@/components/DesktopNavbar';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { isWide } = useResponsive();
   const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 8);
   const barHeight = 56 + bottomPadding;
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: isWide,
+        header: () => <DesktopNavbar />,
         tabBarActiveTintColor: colors.primary.coral,
         tabBarInactiveTintColor: colors.text.tertiary,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: barHeight,
-            paddingBottom: bottomPadding,
-          },
-        ],
+        tabBarStyle: isWide
+          ? { display: 'none' }
+          : [
+              styles.tabBar,
+              {
+                height: barHeight,
+                paddingBottom: bottomPadding,
+              },
+            ],
         tabBarShowLabel: false,
         tabBarHideOnKeyboard: true,
       }}>

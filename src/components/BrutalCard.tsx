@@ -1,13 +1,12 @@
-// Elegant card — soft shadow, generous radius, no hard borders
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { colors } from '@/theme/colors';
 import { shadows, radii } from '@/theme/typography';
 
 interface ElegantCardProps {
   children: React.ReactNode;
   bgColor?: string;
-  style?: ViewStyle;
+  style?: any;
   variant?: 'default' | 'elevated' | 'flat' | 'tinted';
   tintColor?: string;
 }

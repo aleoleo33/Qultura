@@ -10,6 +10,7 @@ import { colors } from '@/theme/colors';
 import { globalStyles, shadows, radii } from '@/theme/typography';
 import { mockProfile } from '@/data/mockData';
 import { MapPin, Settings, Share2, Bookmark, Check } from 'lucide-react-native';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const PROFILE_TABS = ['Portfolio', 'Artworks', 'Saved'];
 
@@ -33,199 +34,211 @@ function chunkArray<T>(arr: T[], size: number): (T | null)[][] {
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState('Portfolio');
   const [following, setFollowing] = useState(false);
+  const { isWide, profileColumns } = useResponsive();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={isWide ? [] : ['top', 'left', 'right']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.contentWrapper}>
 
-        {/* Top bar */}
-        <View style={styles.topBar}>
-          <Text style={[globalStyles.stamp, { color: colors.text.tertiary }]}>
-            {mockProfile.handle}
-          </Text>
-          <View style={styles.topActions}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Share2 size={18} color={colors.text.secondary} strokeWidth={1.5} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Settings size={18} color={colors.text.secondary} strokeWidth={1.5} />
-            </TouchableOpacity>
-          </View>
-        </View>
+          {/* Top bar — only on mobile */}
+          {!isWide && (
+            <View style={styles.topBar}>
+              <Text style={[globalStyles.stamp, { color: colors.text.tertiary }]}>
+                {mockProfile.handle}
+              </Text>
+              <View style={styles.topActions}>
+                <TouchableOpacity style={styles.iconBtn}>
+                  <Share2 size={18} color={colors.text.secondary} strokeWidth={1.5} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn}>
+                  <Settings size={18} color={colors.text.secondary} strokeWidth={1.5} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
-        {/* Profile hero — elegant, soft gradient card */}
-        <View style={styles.heroBannerWrapper}>
-          <View style={styles.heroBanner}>
-            {/* Soft gradient background */}
-            <View style={styles.heroGradient} />
+          {/* Profile hero — elegant, soft gradient card */}
+          <View style={[styles.heroBannerWrapper, isWide && { marginTop: 24 }]}>
+            <View style={styles.heroBanner}>
+              {/* Soft gradient background */}
+              <View style={styles.heroGradient} />
 
-            <View style={styles.heroInner}>
-              {/* Avatar */}
-              <View style={styles.avatarWrapper}>
-                <View style={styles.avatar} />
-                <View style={styles.verifiedBadge}>
-                  <Check size={10} color="#fff" strokeWidth={3} />
+              <View style={[styles.heroInner, isWide && styles.heroInnerDesktop]}>
+                {/* Avatar */}
+                <View style={styles.avatarWrapper}>
+                  <View style={[styles.avatar, isWide && { width: 96, height: 96, borderRadius: 32 }]} />
+                  <View style={styles.verifiedBadge}>
+                    <Check size={10} color="#fff" strokeWidth={3} />
+                  </View>
+                </View>
+
+                <View style={isWide && { alignItems: 'center' }}>
+                  <Text style={[globalStyles.heading1, { color: '#fff', marginTop: 14, fontSize: isWide ? 36 : 30 }]}>
+                    {mockProfile.name}
+                  </Text>
+                  <Text style={[globalStyles.body, { color: 'rgba(255,255,255,0.85)', marginTop: 4, maxWidth: 520, textAlign: 'center' }]}>
+                    {mockProfile.bio}
+                  </Text>
+                  <View style={styles.locationRow}>
+                    <MapPin size={13} color="rgba(255,255,255,0.6)" strokeWidth={1.5} />
+                    <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.6)', marginLeft: 4 }]}>
+                      {mockProfile.location}
+                    </Text>
+                  </View>
                 </View>
               </View>
+            </View>
+          </View>
 
-              <Text style={[globalStyles.heading1, { color: '#fff', marginTop: 14, fontSize: 30 }]}>
-                {mockProfile.name}
-              </Text>
-              <Text style={[globalStyles.body, { color: 'rgba(255,255,255,0.8)', marginTop: 4 }]}>
-                {mockProfile.bio}
-              </Text>
-              <View style={styles.locationRow}>
-                <MapPin size={13} color="rgba(255,255,255,0.6)" strokeWidth={1.5} />
-                <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.6)', marginLeft: 4 }]}>
-                  {mockProfile.location}
+          {/* Stats strip — clean, no heavy borders, responsive text */}
+          <View style={[styles.statsRow, isWide && styles.statsRowDesktop]}>
+            {[
+              { label: 'Works', value: mockProfile.artworks },
+              { label: 'Followers', value: mockProfile.followers.toLocaleString() },
+              { label: 'Following', value: mockProfile.following },
+              { label: 'Shows', value: mockProfile.exhibitions },
+            ].map(({ label, value }) => (
+              <View key={label} style={styles.statItem}>
+                <Text
+                  style={[globalStyles.heading2, { fontSize: isWide ? 22 : 18 }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {value}
+                </Text>
+                <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 2 }]}>
+                  {label}
                 </Text>
               </View>
-            </View>
+            ))}
           </View>
-        </View>
 
-        {/* Stats strip — clean, no heavy borders, responsive text */}
-        <View style={styles.statsRow}>
-          {[
-            { label: 'Works', value: mockProfile.artworks },
-            { label: 'Followers', value: mockProfile.followers.toLocaleString() },
-            { label: 'Following', value: mockProfile.following },
-            { label: 'Shows', value: mockProfile.exhibitions },
-          ].map(({ label, value }) => (
-            <View key={label} style={styles.statItem}>
-              <Text
-                style={[globalStyles.heading2, { fontSize: 18 }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {value}
-              </Text>
-              <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 2 }]}>
-                {label}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Action buttons — soft, elegant */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.followBtn, following && styles.followBtnActive]}
-            onPress={() => setFollowing(f => !f)}
-            activeOpacity={0.8}
-          >
-            {following && <Check size={12} color="#fff" strokeWidth={3} style={{ marginRight: 4 }} />}
-            <Text style={[globalStyles.stamp, { color: following ? '#fff' : colors.text.primary }]}>
-              {following ? 'Following' : 'Follow'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.messageBtn} activeOpacity={0.8}>
-            <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>Message</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.collectBtn} activeOpacity={0.8}>
-            <Bookmark size={18} color={colors.text.secondary} strokeWidth={1.5} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile tabs — soft segmented */}
-        <View style={styles.profileTabs}>
-          {PROFILE_TABS.map(tab => (
+          {/* Action buttons — soft, elegant */}
+          <View style={[styles.actionRow, isWide && { maxWidth: 480, marginHorizontal: 'auto', width: '100%' }]}>
             <TouchableOpacity
-              key={tab}
-              style={[styles.profileTab, activeTab === tab && styles.profileTabActive]}
-              onPress={() => setActiveTab(tab)}
+              style={[styles.followBtn, following && styles.followBtnActive]}
+              onPress={() => setFollowing(f => !f)}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.profileTabText, activeTab === tab && styles.profileTabTextActive]}>
-                {tab}
+              {following && <Check size={12} color="#fff" strokeWidth={3} style={{ marginRight: 4 }} />}
+              <Text style={[globalStyles.stamp, { color: following ? '#fff' : colors.text.primary }]}>
+                {following ? 'Following' : 'Follow'}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+            <TouchableOpacity style={styles.messageBtn} activeOpacity={0.8}>
+              <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>Message</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.collectBtn} activeOpacity={0.8}>
+              <Bookmark size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Portfolio Grid — row-based 3-column grid that never wraps unexpectedly */}
-        {activeTab === 'Portfolio' && (
-          <View style={styles.portfolioGrid}>
-            {chunkArray(mockProfile.portfolioColors, 3).map((row, rowIndex) => (
-              <View key={rowIndex} style={styles.portfolioRow}>
-                {row.map((color, colIndex) => {
-                  if (!color) {
-                    return <View key={colIndex} style={styles.portfolioTilePlaceholder} />;
-                  }
-                  const itemIndex = rowIndex * 3 + colIndex;
-                  return (
-                    <TouchableOpacity
-                      key={colIndex}
-                      style={[
-                        styles.portfolioTile,
-                        { backgroundColor: portfolioTints[itemIndex % portfolioTints.length] },
-                      ]}
-                      activeOpacity={0.9}
-                    >
-                      {itemIndex === 0 && (
-                        <Stamp
-                          label="Featured"
-                          bgColor="rgba(255,255,255,0.85)"
-                          textColor={colors.text.primary}
-                          style={{ margin: 8 }}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+          {/* Profile tabs — soft segmented */}
+          <View style={[styles.profileTabs, isWide && { maxWidth: 440, marginHorizontal: 'auto', width: '100%', marginBottom: 28 }]}>
+            {PROFILE_TABS.map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.profileTab, activeTab === tab && styles.profileTabActive]}
+                onPress={() => setActiveTab(tab)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.profileTabText, activeTab === tab && styles.profileTabTextActive]}>
+                  {tab}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
-        )}
 
-        {/* Artworks for sale */}
-        {activeTab === 'Artworks' && (
-          <View style={styles.artworkList}>
-            {['Terracotta No. 3', 'Ceramic Bowl Series', 'Field Study IV'].map((title, i) => {
-              const artColors = [colors.primary.coral, colors.secondary.amber, colors.secondary.sage];
-              return (
-                <BrutalCard key={i} bgColor={colors.surface.card} style={{ width: '100%', marginBottom: 14, ...shadows.card }}>
-                  <View style={{ flexDirection: 'row' }}>
-                    <View style={[styles.artworkThumb, { backgroundColor: artColors[i] }]} />
-                    <View style={{ flex: 1, padding: 16 }}>
-                      <Text style={[globalStyles.heading3, { fontSize: 17 }]}>{title}</Text>
-                      <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 2, marginBottom: 10 }]}>
-                        2024 / Ceramics
-                      </Text>
-                      <Stamp label="For Sale" bgColor={colors.tints.sage} textColor={colors.secondary.sage} />
+          {/* Portfolio Grid — responsive 3 to 5 column grid */}
+          {activeTab === 'Portfolio' && (
+            <View style={styles.portfolioGrid}>
+              {chunkArray(mockProfile.portfolioColors, profileColumns).map((row, rowIndex) => (
+                <View key={rowIndex} style={styles.portfolioRow}>
+                  {row.map((color, colIndex) => {
+                    if (!color) {
+                      return <View key={colIndex} style={styles.portfolioTilePlaceholder} />;
+                    }
+                    const itemIndex = rowIndex * profileColumns + colIndex;
+                    return (
+                      <TouchableOpacity
+                        key={colIndex}
+                        style={[
+                          styles.portfolioTile,
+                          { backgroundColor: portfolioTints[itemIndex % portfolioTints.length] },
+                        ]}
+                        activeOpacity={0.9}
+                      >
+                        {itemIndex === 0 && (
+                          <Stamp
+                            label="Featured"
+                            bgColor="rgba(255,255,255,0.85)"
+                            textColor={colors.text.primary}
+                            style={{ margin: 8 }}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Artworks for sale */}
+          {activeTab === 'Artworks' && (
+            <View style={[styles.artworkList, isWide && styles.artworkListDesktop]}>
+              {['Terracotta No. 3', 'Ceramic Bowl Series', 'Field Study IV'].map((title, i) => {
+                const artColors = [colors.primary.coral, colors.secondary.amber, colors.secondary.sage];
+                return (
+                  <BrutalCard
+                    key={i}
+                    bgColor={colors.surface.card}
+                    style={[{ width: '100%', marginBottom: 14, ...shadows.card }, isWide && { width: '48.8%' }]}
+                  >
+                    <View style={{ flexDirection: 'row' }}>
+                      <View style={[styles.artworkThumb, { backgroundColor: artColors[i] }]} />
+                      <View style={{ flex: 1, padding: 16 }}>
+                        <Text style={[globalStyles.heading3, { fontSize: 17 }]}>{title}</Text>
+                        <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 2, marginBottom: 10 }]}>
+                          2026 / Ceramics
+                        </Text>
+                        <Stamp label="For Sale" bgColor={colors.tints.sage} textColor={colors.secondary.sage} />
+                      </View>
                     </View>
-                  </View>
-                </BrutalCard>
-              );
-            })}
-          </View>
-        )}
+                  </BrutalCard>
+                );
+              })}
+            </View>
+          )}
 
-        {/* Saved */}
-        {activeTab === 'Saved' && (
-          <View style={styles.portfolioGrid}>
-            {chunkArray(
-              [colors.secondary.lavender, colors.secondary.sky, colors.primary.coralSoft, colors.secondary.amber],
-              3
-            ).map((row, rowIndex) => (
-              <View key={rowIndex} style={styles.portfolioRow}>
-                {row.map((color, colIndex) => {
-                  if (!color) {
-                    return <View key={colIndex} style={styles.portfolioTilePlaceholder} />;
-                  }
-                  return (
-                    <TouchableOpacity
-                      key={colIndex}
-                      style={[styles.portfolioTile, { backgroundColor: color }]}
-                      activeOpacity={0.9}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        )}
+          {/* Saved */}
+          {activeTab === 'Saved' && (
+            <View style={styles.portfolioGrid}>
+              {chunkArray(
+                [colors.secondary.lavender, colors.secondary.sky, colors.primary.coralSoft, colors.secondary.amber],
+                profileColumns
+              ).map((row, rowIndex) => (
+                <View key={rowIndex} style={styles.portfolioRow}>
+                  {row.map((color, colIndex) => {
+                    if (!color) {
+                      return <View key={colIndex} style={styles.portfolioTilePlaceholder} />;
+                    }
+                    return (
+                      <TouchableOpacity
+                        key={colIndex}
+                        style={[styles.portfolioTile, { backgroundColor: color }]}
+                        activeOpacity={0.9}
+                      />
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          )}
 
-        <View style={{ height: 24 }} />
+          <View style={{ height: 48 }} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -233,6 +246,8 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background.primary },
+  scrollContent: { paddingBottom: 32 },
+  contentWrapper: { maxWidth: 1280, width: '100%', marginHorizontal: 'auto' },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -267,6 +282,13 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     alignItems: 'center',
     position: 'relative',
+  },
+  heroInnerDesktop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 32,
+    padding: 36,
   },
   avatarWrapper: { position: 'relative' },
   avatar: {
@@ -304,6 +326,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     ...shadows.card,
+  },
+  statsRowDesktop: {
+    maxWidth: 600,
+    marginHorizontal: 'auto',
+    width: '100%',
+    marginTop: 24,
+    marginBottom: 24,
   },
   statItem: {
     flex: 1,
@@ -381,6 +410,11 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
   },
   artworkList: { paddingHorizontal: 20 },
+  artworkListDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
   artworkThumb: {
     width: 100,
     height: 120,

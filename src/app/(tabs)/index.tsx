@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, TextInput,
+  TouchableOpacity, TextInput, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrutalCard } from '@/components/BrutalCard';
@@ -10,6 +10,7 @@ import { colors } from '@/theme/colors';
 import { globalStyles, shadows, radii } from '@/theme/typography';
 import { mockPosts, mockStories } from '@/data/mockData';
 import { Heart, Search, Bell } from 'lucide-react-native';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const categories = ['All', 'Painting', 'Illustration', 'Photography', 'Print', 'Digital', 'Ceramics'];
 
@@ -27,6 +28,7 @@ export default function HomeFeedScreen() {
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchFocused, setSearchFocused] = useState(false);
+  const { isWide, feedColumns } = useResponsive();
 
   const toggleLike = (id: string) => {
     setLiked(prev => ({ ...prev, [id]: !prev[id] }));
@@ -36,221 +38,221 @@ export default function HomeFeedScreen() {
     ? mockPosts
     : mockPosts.filter(p => p.category === activeCategory);
 
-  const leftCol = filtered.filter((_, i) => i % 2 === 0);
-  const rightCol = filtered.filter((_, i) => i % 2 !== 0);
+  // Dynamically partition items into N columns (2 on mobile, 3 on tablet, 4 on desktop)
+  const columnsData = Array.from({ length: feedColumns }, () => [] as typeof filtered);
+  filtered.forEach((post, i) => {
+    columnsData[i % feedColumns].push(post);
+  });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={isWide ? [] : ['top', 'left', 'right']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.contentWrapper}>
 
-        {/* Header — clean, breathing */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.logo}>qultura</Text>
-            <Text style={[globalStyles.caption, { color: colors.text.tertiary }]}>
-              creative culture platform
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Bell size={20} color={colors.text.primary} strokeWidth={1.5} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search bar — soft, minimal */}
-        <View style={styles.searchRow}>
-          <View style={[styles.searchBox, searchFocused && styles.searchFocused]}>
-            <Search size={16} color={colors.text.tertiary} strokeWidth={1.5} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search artists, artworks..."
-              placeholderTextColor={colors.text.tertiary}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-          </View>
-        </View>
-
-        {/* Stories row — soft rings */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storiesScroll} contentContainerStyle={styles.storiesContent}>
-          {mockStories.map((story, i) => (
-            <TouchableOpacity key={story.id} style={styles.storyItem}>
-              <View style={[styles.storyRing, { borderColor: cardTints[i % cardTints.length] }]}>
-                <View style={[styles.storyAvatar, { backgroundColor: cardTints[i % cardTints.length] }]} />
+          {/* Mobile Header — hidden on desktop since DesktopNavbar displays brand */}
+          {!isWide && (
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.logo}>qultura</Text>
+                <Text style={[globalStyles.caption, { color: colors.text.tertiary }]}>
+                  creative culture platform
+                </Text>
               </View>
-              <Text style={[globalStyles.caption, styles.storyName]} numberOfLines={1}>
-                {story.name.split(' ')[0]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={styles.storyItem}>
-            <View style={[styles.storyRing, { borderColor: colors.border.subtle }]}>
-              <View style={[styles.storyAvatar, { backgroundColor: colors.background.tertiary }]}>
-                <Text style={{ fontSize: 18, color: colors.text.tertiary }}>+</Text>
+              <TouchableOpacity style={styles.iconBtn}>
+                <Bell size={20} color={colors.text.primary} strokeWidth={1.5} />
+                <View style={styles.notifDot} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Mobile Search bar — hidden on desktop */}
+          {!isWide && (
+            <View style={styles.searchRow}>
+              <View style={[styles.searchBox, searchFocused && styles.searchFocused]}>
+                <Search size={16} color={colors.text.tertiary} strokeWidth={1.5} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search artists, artworks..."
+                  placeholderTextColor={colors.text.tertiary}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                />
               </View>
             </View>
-            <Text style={[globalStyles.caption, styles.storyName]}>Your story</Text>
-          </TouchableOpacity>
-        </ScrollView>
+          )}
 
-        {/* Category chips — pill-shaped, soft */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll} contentContainerStyle={styles.categoriesContent}>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.chip, activeCategory === cat && styles.chipActive]}
-              onPress={() => setActiveCategory(cat)}
-            >
-              <Text style={[styles.chipText, activeCategory === cat && styles.chipTextActive]}>
-                {cat}
-              </Text>
+          {/* Stories row */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={[styles.storiesScroll, isWide && { marginTop: 24, marginBottom: 24 }]}
+            contentContainerStyle={styles.storiesContent}
+          >
+            {mockStories.map((story, i) => (
+              <TouchableOpacity key={story.id} style={styles.storyItem} activeOpacity={0.8}>
+                <View style={[styles.storyRing, { borderColor: cardTints[i % cardTints.length] }]}>
+                  <View style={[styles.storyAvatar, { backgroundColor: cardTints[i % cardTints.length] }]} />
+                </View>
+                <Text style={[globalStyles.caption, styles.storyName]} numberOfLines={1}>
+                  {story.name.split(' ')[0]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.storyItem} activeOpacity={0.8}>
+              <View style={[styles.storyRing, { borderColor: colors.border.subtle }]}>
+                <View style={[styles.storyAvatar, { backgroundColor: colors.background.tertiary }]}>
+                  <Text style={{ fontSize: 18, color: colors.text.tertiary }}>+</Text>
+                </View>
+              </View>
+              <Text style={[globalStyles.caption, styles.storyName]}>Your story</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </ScrollView>
 
-        {/* Featured — elegant card with muted background */}
-        <View style={styles.featuredWrapper}>
-          <BrutalCard bgColor={colors.primary.coral} style={styles.featuredCard}>
-            <View style={styles.featuredInner}>
-              <Stamp label="Featured Artist" bgColor="rgba(255,255,255,0.2)" textColor="#fff" />
-              <Text style={[globalStyles.heading1, styles.featuredTitle]}>
-                Studio{'\n'}Genta
+          {/* Category chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesScroll}
+            contentContainerStyle={styles.categoriesContent}
+          >
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.chip, activeCategory === cat && styles.chipActive]}
+                onPress={() => setActiveCategory(cat)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.chipText, activeCategory === cat && styles.chipTextActive]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Featured Artist — responsive layout */}
+          <View style={styles.featuredWrapper}>
+            <BrutalCard bgColor={colors.primary.coral} style={styles.featuredCard}>
+              <View style={[styles.featuredInner, isWide && styles.featuredInnerDesktop]}>
+                <View style={{ flex: 1 }}>
+                  <Stamp label="Featured Artist" bgColor="rgba(255,255,255,0.2)" textColor="#fff" />
+                  <Text style={[globalStyles.heading1, styles.featuredTitle, isWide && { fontSize: 36, lineHeight: 44 }]}>
+                    Studio Genta
+                  </Text>
+                  <Text style={[globalStyles.body, { color: 'rgba(255,255,255,0.85)', maxWidth: 540 }]}>
+                    Ceramics and analog objects from Yogyakarta. Creating timeless functional art from clay and earth.
+                  </Text>
+                  <TouchableOpacity style={styles.featuredBtn} activeOpacity={0.85}>
+                    <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>
+                      View Profile & Works
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {isWide && (
+                  <View style={styles.featuredDesktopVisual}>
+                    <View style={styles.featuredVisualArt}>
+                      <Text style={styles.featuredVisualEmoji}>🏺</Text>
+                      <Text style={styles.featuredVisualCaption}>Studio Series / 2026</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </BrutalCard>
+          </View>
+
+          {/* Section heading */}
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={globalStyles.heading2}>Fresh Works</Text>
+              {isWide && (
+                <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 2 }]}>
+                  Curated submissions from contemporary Indonesian artists
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Masonry feed — dynamic 2 to 4 responsive columns */}
+          {filtered.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={[globalStyles.heading3, { color: colors.text.secondary }]}>
+                No artworks found
               </Text>
-              <Text style={[globalStyles.body, { color: 'rgba(255,255,255,0.85)' }]}>
-                Ceramics and analog objects from Yogyakarta.
+              <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 4, textAlign: 'center' }]}>
+                Try selecting another category or check back later.
               </Text>
-              <TouchableOpacity style={styles.featuredBtn} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.resetFilterBtn}
+                onPress={() => setActiveCategory('All')}
+                activeOpacity={0.8}
+              >
                 <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>
-                  View Profile
+                  Show All
                 </Text>
               </TouchableOpacity>
             </View>
-          </BrutalCard>
-        </View>
-
-        {/* Section heading */}
-        <View style={styles.sectionHeader}>
-          <Text style={globalStyles.heading2}>Fresh Works</Text>
-          <TouchableOpacity>
-            <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Masonry feed — fully responsive, zero-overflow columns */}
-        {filtered.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={[globalStyles.heading3, { color: colors.text.secondary }]}>
-              No artworks found
-            </Text>
-            <Text style={[globalStyles.caption, { color: colors.text.tertiary, marginTop: 4, textAlign: 'center' }]}>
-              Try selecting another category or check back later.
-            </Text>
-            <TouchableOpacity
-              style={styles.resetFilterBtn}
-              onPress={() => setActiveCategory('All')}
-            >
-              <Text style={[globalStyles.stamp, { color: colors.primary.coral }]}>
-                Show All
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.masonry}>
-            <View style={styles.masonryCol}>
-              {leftCol.map((post) => (
+          ) : (
+            <View style={[styles.masonry, isWide && { gap: 16 }]}>
+              {columnsData.map((colPosts, colIndex) => (
                 <View
-                  key={post.id}
+                  key={colIndex}
                   style={[
-                    styles.masonryCard,
-                    {
-                      height: post.height,
-                      backgroundColor: cardTints[parseInt(post.id) % cardTints.length],
-                    },
+                    styles.masonryCol,
+                    colIndex % 2 !== 0 && { marginTop: isWide ? 28 : 20 },
                   ]}
                 >
-                  <View style={styles.masonryInner}>
-                    <Stamp
-                      label={post.category}
-                      bgColor="rgba(255,255,255,0.85)"
-                      textColor={colors.text.primary}
-                    />
-                    <View>
-                      <Text style={[globalStyles.heading3, { color: '#fff', marginBottom: 2 }]} numberOfLines={2}>
-                        {post.title}
-                      </Text>
-                      <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.8)' }]} numberOfLines={1}>
-                        {post.artist}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.likeRow}
-                        onPress={() => toggleLike(post.id)}
-                        activeOpacity={0.7}
-                      >
-                        <Heart
-                          size={14}
-                          color={liked[post.id] || post.isLiked ? colors.primary.coralSoft : 'rgba(255,255,255,0.9)'}
-                          fill={liked[post.id] || post.isLiked ? colors.primary.coralSoft : 'transparent'}
-                          strokeWidth={1.5}
+                  {colPosts.map((post) => (
+                    <View
+                      key={post.id}
+                      style={[
+                        styles.masonryCard,
+                        {
+                          height: post.height,
+                          backgroundColor: cardTints[parseInt(post.id) % cardTints.length],
+                        },
+                      ]}
+                    >
+                      <View style={styles.masonryInner}>
+                        <Stamp
+                          label={post.category}
+                          bgColor="rgba(255,255,255,0.85)"
+                          textColor={colors.text.primary}
                         />
-                        <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.9)', marginLeft: 4 }]}>
-                          {post.likes + (liked[post.id] ? 1 : 0)}
-                        </Text>
-                      </TouchableOpacity>
+                        <View>
+                          <Text style={[globalStyles.heading3, { color: '#fff', marginBottom: 2 }]} numberOfLines={2}>
+                            {post.title}
+                          </Text>
+                          <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.8)' }]} numberOfLines={1}>
+                            {post.artist}
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.likeRow}
+                            onPress={() => toggleLike(post.id)}
+                            activeOpacity={0.7}
+                          >
+                            <Heart
+                              size={14}
+                              color={liked[post.id] || post.isLiked ? colors.primary.coralSoft : 'rgba(255,255,255,0.9)'}
+                              fill={liked[post.id] || post.isLiked ? colors.primary.coralSoft : 'transparent'}
+                              strokeWidth={1.5}
+                            />
+                            <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.9)', marginLeft: 4 }]}>
+                              {post.likes + (liked[post.id] ? 1 : 0)}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
                     </View>
-                  </View>
+                  ))}
                 </View>
               ))}
             </View>
+          )}
 
-            <View style={[styles.masonryCol, { marginTop: 20 }]}>
-              {rightCol.map((post) => (
-                <View
-                  key={post.id}
-                  style={[
-                    styles.masonryCard,
-                    {
-                      height: post.height,
-                      backgroundColor: cardTints[parseInt(post.id) % cardTints.length],
-                    },
-                  ]}
-                >
-                  <View style={styles.masonryInner}>
-                    <Stamp
-                      label={post.category}
-                      bgColor="rgba(255,255,255,0.85)"
-                      textColor={colors.text.primary}
-                    />
-                    <View>
-                      <Text style={[globalStyles.heading3, { color: '#fff', marginBottom: 2 }]} numberOfLines={2}>
-                        {post.title}
-                      </Text>
-                      <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.8)' }]} numberOfLines={1}>
-                        {post.artist}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.likeRow}
-                        onPress={() => toggleLike(post.id)}
-                        activeOpacity={0.7}
-                      >
-                        <Heart
-                          size={14}
-                          color={liked[post.id] || post.isLiked ? colors.primary.coralSoft : 'rgba(255,255,255,0.9)'}
-                          fill={liked[post.id] || post.isLiked ? colors.primary.coralSoft : 'transparent'}
-                          strokeWidth={1.5}
-                        />
-                        <Text style={[globalStyles.caption, { color: 'rgba(255,255,255,0.9)', marginLeft: 4 }]}>
-                          {post.likes + (liked[post.id] ? 1 : 0)}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        <View style={{ height: 24 }} />
+          <View style={{ height: 48 }} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -369,9 +371,44 @@ const styles = StyleSheet.create({
   featuredCard: {
     width: '100%',
   },
+  contentWrapper: {
+    maxWidth: 1280,
+    width: '100%',
+    marginHorizontal: 'auto',
+  },
   featuredInner: {
     padding: 24,
     zIndex: 2,
+  },
+  featuredInnerDesktop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 36,
+    gap: 32,
+  },
+  featuredDesktopVisual: {
+    width: 220,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  featuredVisualArt: {
+    alignItems: 'center',
+  },
+  featuredVisualEmoji: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  featuredVisualCaption: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 0.5,
   },
   featuredTitle: {
     color: '#FFFFFF',
